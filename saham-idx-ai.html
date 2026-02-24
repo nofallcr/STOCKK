@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDX Signal AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0e;
+    --surface: #0d1821;
+    --border: #1a2e3a;
+    --accent: #00e5ff;
+    --green: #00ff88;
+    --red: #ff3366;
+    --yellow: #ffcc00;
+    --text: #c8dde8;
+    --muted: #4a6375;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 7vw, 64px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  /* Input Panel */
+  .input-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .input-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .panel-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .panel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 8px; }
+  .field.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  input, select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,229,255,0.1);
+  }
+
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+
+  select option { background: var(--bg); }
+
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  /* Quick picks */
+  .quick-picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .chip {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+  }
+
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Analyze button */
+  .btn-analyze {
+    width: 100%;
+    padding: 18px;
+    background: var(--accent);
+    border: none;
+    border-radius: 2px;
+    color: var(--bg);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-analyze:hover { background: #33eeff; transform: translateY(-1px); }
+  .btn-analyze:active { transform: translateY(0); }
+  .btn-analyze:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 60px 32px;
+  }
+
+  .loading.active { display: block; }
+
+  .scanner {
+    width: 80px;
+    height: 80px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    margin: 0 auto 24px;
+    position: relative;
+    animation: rotate 2s linear infinite;
+  }
+
+  .scanner::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    opacity: 0.4;
+  }
+
+  .scanner::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 50%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent));
+    transform-origin: left center;
+    transform: rotate(0deg) translateY(-50%);
+  }
+
+  @keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .loading-text {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  /* Result Panel */
+  .result-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .result-panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .stock-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+  }
+
+  .signal-badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    padding: 8px 20px;
+    border-radius: 2px;
+  }
+
+  .signal-badge.BUY { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid var(--green); }
+  .signal-badge.SELL { background: rgba(255,51,102,0.15); color: var(--red); border: 1px solid var(--red); }
+  .signal-badge.HOLD { background: rgba(255,204,0,0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+
+  /* Metrics bar */
+  .metrics-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    border-bottom: 1px solid var(--border);
+  }
+
+  .metric {
+    padding: 20px 24px;
+    border-right: 1px solid var(--border);
+  }
+
+  .metric:last-child { border-right: none; }
+  .metric-label { font-size: 8px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .metric-value { font-size: 20px; font-weight: 700; }
+  .metric-value.up { color: var(--green); }
+  .metric-value.down { color: var(--red); }
+  .metric-value.neutral { color: var(--yellow); }
+
+  /* Confidence bar */
+  .confidence-section {
+    padding: 24px 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .conf-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .conf-value { color: var(--accent); }
+
+  .conf-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .conf-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* Analysis content */
+  .analysis-content {
+    padding: 32px;
+  }
+
+  .analysis-content h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    margin-top: 28px;
+  }
+
+  .analysis-content h3:first-child { margin-top: 0; }
+
+  .analysis-content p {
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .analysis-content ul {
+    list-style: none;
+    margin-bottom: 12px;
+  }
+
+  .analysis-content ul li {
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    padding: 6px 0;
+    padding-left: 20px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .analysis-content ul li:last-child { border-bottom: none; }
+
+  .analysis-content ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 10px;
+  }
+
+  .analysis-content strong { color: #fff; }
+
+  .disclaimer {
+    margin-top: 32px;
+    padding: 16px;
+    background: rgba(255,204,0,0.05);
+    border: 1px solid rgba(255,204,0,0.15);
+    border-radius: 2px;
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+  }
+
+  .disclaimer strong { color: var(--yellow); }
+
+  .error-msg {
+    background: rgba(255,51,102,0.08);
+    border: 1px solid rgba(255,51,102,0.2);
+    border-radius: 2px;
+    padding: 20px 32px;
+    color: var(--red);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">IDX · AI Signal</div>
+    <h1>SAHAM<br>ANALYZER</h1>
+    <p class="subtitle">Powered by Claude AI · Bursa Efek Indonesia</p>
+  </header>
+
+  <div class="input-panel">
+    <div class="panel-label">Input Data Saham</div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Kode Saham (Ticker)</label>
+        <input type="text" id="ticker" placeholder="cth: BBCA, TLKM, GOTO" maxlength="6">
+        <div class="quick-picks">
+          <button class="chip" onclick="setTicker('BBCA')">BBCA</button>
+          <button class="chip" onclick="setTicker('TLKM')">TLKM</button>
+          <button class="chip" onclick="setTicker('GOTO')">GOTO</button>
+          <button class="chip" onclick="setTicker('BMRI')">BMRI</button>
+          <button class="chip" onclick="setTicker('ASII')">ASII</button>
+          <button class="chip" onclick="setTicker('BBRI')">BBRI</button>
+          <button class="chip" onclick="setTicker('ANTM')">ANTM</button>
+          <button class="chip" onclick="setTicker('INDF')">INDF</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Harga Saat Ini (Rp)</label>
+        <input type="number" id="price" placeholder="cth: 9200">
+      </div>
+
+      <div class="field">
+        <label>Perubahan Harga Hari Ini (%)</label>
+        <input type="number" id="change" placeholder="cth: +1.5 atau -2.3" step="0.01">
+      </div>
+
+      <div class="field">
+        <label>Volume Transaksi</label>
+        <input type="text" id="volume" placeholder="cth: 25.3M atau 1.2B">
+      </div>
+
+      <div class="field">
+        <label>Sektor</label>
+        <select id="sector">
+          <option value="">Pilih sektor...</option>
+          <option>Perbankan & Keuangan</option>
+          <option>Telekomunikasi</option>
+          <option>Energi & Pertambangan</option>
+          <option>Consumer Goods</option>
+          <option>Properti</option>
+          <option>Infrastruktur</option>
+          <option>Teknologi</option>
+          <option>Healthcare</option>
+          <option>Agribisnis</option>
+          <option>Industri Dasar</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Horizon Investasi</label>
+        <select id="horizon">
+          <option value="short">Jangka Pendek (1-4 minggu)</option>
+          <option value="medium" selected>Jangka Menengah (1-6 bulan)</option>
+          <option value="long">Jangka Panjang (6+ bulan)</option>
+        </select>
+      </div>
+
+      <div class="field full">
+        <label>Informasi Tambahan (opsional)</label>
+        <textarea id="extra" placeholder="Masukkan info tambahan: laporan keuangan, berita terbaru, rencana ekspansi, dividen, dll..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-analyze" onclick="analyze()" id="analyzeBtn">
+      ▶ ANALISIS SEKARANG
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="scanner"></div>
+    <p class="loading-text">MEMPROSES DATA...</p>
+  </div>
+
+  <div class="result-panel" id="result">
+    <div class="result-header">
+      <div class="stock-name" id="res-ticker">-</div>
+      <div class="signal-badge" id="res-signal">-</div>
+    </div>
+    <div class="metrics-bar" id="res-metrics"></div>
+    <div class="confidence-section">
+      <div class="conf-label">
+        <span>Confidence Score</span>
+        <span class="conf-value" id="conf-pct">-</span>
+      </div>
+      <div class="conf-track">
+        <div class="conf-fill" id="conf-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="analysis-content" id="res-content"></div>
+  </div>
+</div>
+
+<script>
+function setTicker(t) {
+  document.getElementById('ticker').value = t;
+}
+
+function parseAnalysis(text) {
+  // Extract signal
+  let signal = 'HOLD';
+  if (/\bBELI\b|\bBUY\b/i.test(text)) signal = 'BUY';
+  else if (/\bJUAL\b|\bSELL\b/i.test(text)) signal = 'SELL';
+
+  // Extract confidence
+  let confidence = 65;
+  const confMatch = text.match(/confidence[:\s]*(\d+)/i) || text.match(/(\d+)%\s*(confidence|keyakinan)/i);
+  if (confMatch) confidence = parseInt(confMatch[1]);
+
+  return { signal, confidence };
+}
+
+function buildMetrics(data) {
+  const price = data.price ? `Rp ${parseInt(data.price).toLocaleString('id')}` : '-';
+  const change = data.change ? data.change : null;
+  const changeClass = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
+  const changeStr = change ? `${change > 0 ? '+' : ''}${change}%` : '-';
+
+  return `
+    <div class="metric"><div class="metric-label">Harga</div><div class="metric-value">${price}</div></div>
+    <div class="metric"><div class="metric-label">Perubahan</div><div class="metric-value ${changeClass}">${changeStr}</div></div>
+    <div class="metric"><div class="metric-label">Volume</div><div class="metric-value">${data.volume || '-'}</div></div>
+    <div class="metric"><div class="metric-label">Horizon</div><div class="metric-value neutral">${
+      data.horizon === 'short' ? 'PENDEK' : data.horizon === 'long' ? 'PANJANG' : 'MENENGAH'
+    }</div></div>
+  `;
+}
+
+function renderMarkdown(text) {
+  return text
+    .replace(/^#{3}\s+(.+)$/gm, '<h3>$1</h3>')
+    .replace(/^#{2}\s+(.+)$/gm, '<h3>$1</h3>')
+    .replace(/^#{1}\s+(.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^([^<\n].+)$/gm, (m) => m.startsWith('<') ? m : `<p>${m}</p>`)
+    .replace(/<p><\/p>/g, '');
+}
+
+async function analyze() {
+  const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+  const price = document.getElementById('price').value;
+  const change = document.getElementById('change').value;
+  const volume = document.getElementById('volume').value;
+  const sector = document.getElementById('sector').value;
+  const horizon = document.getElementById('horizon').value;
+  const extra = document.getElementById('extra').value;
+
+  if (!ticker) {
+    alert('Masukkan kode saham terlebih dahulu!');
+    return;
+  }
+
+  const btn = document.getElementById('analyzeBtn');
+  const loading = document.getElementById('loading');
+  const result = document.getElementById('result');
+
+  btn.disabled = true;
+  loading.classList.add('active');
+  result.classList.remove('active');
+
+  const horizonText = horizon === 'short' ? 'jangka pendek (1-4 minggu)' :
+                      horizon === 'long' ? 'jangka panjang (6+ bulan)' : 'jangka menengah (1-6 bulan)';
+
+  const prompt = `Kamu adalah analis saham profesional spesialis Bursa Efek Indonesia (IDX/BEI). 
+Analisis saham berikut dan berikan rekomendasi sinyal trading yang jelas.
+
+Data Saham:
+- Ticker: ${ticker}.JK (IDX)
+- Harga: ${price ? 'Rp ' + parseInt(price).toLocaleString('id') : 'tidak diketahui'}
+- Perubahan hari ini: ${change ? change + '%' : 'tidak diketahui'}
+- Volume: ${volume || 'tidak diketahui'}
+- Sektor: ${sector || 'tidak diketahui'}
+- Horizon investasi: ${horizonText}
+${extra ? '- Info tambahan: ' + extra : ''}
+
+Berikan analisis lengkap dalam Bahasa Indonesia dengan struktur:
+
+### Sinyal Utama
+Nyatakan dengan jelas: BELI, JUAL, atau TAHAN. Sertakan Confidence Score (misal: Confidence: 72%)
+
+### Analisis Teknikal
+Analisis berdasarkan data yang tersedia, pola umum saham ini di IDX, dan kondisi pasar Indonesia terkini.
+
+### Analisis Fundamental  
+Kekuatan dan kelemahan fundamental perusahaan ini di konteks ekonomi Indonesia.
+
+### Faktor Risiko
+Risiko utama yang perlu diperhatikan investor (termasuk risiko pasar IDX, nilai tukar rupiah, dll).
+
+### Target Harga & Stop Loss
+Berikan estimasi target harga dan level stop loss yang disarankan untuk horizon ${horizonText}.
+
+### Kesimpulan
+Ringkasan singkat dan actionable untuk investor retail Indonesia.
+
+Catatan: Analisis ini bersifat edukatif. Selalu lakukan riset mandiri sebelum berinvestasi.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.map(c => c.text || '').join('') || '';
+
+    if (!text) throw new Error('Respon kosong dari AI');
+
+    const { signal, confidence } = parseAnalysis(text);
+
+    loading.classList.remove('active');
+    result.classList.add('active');
+
+    document.getElementById('res-ticker').textContent = ticker + '.JK';
+    const signalEl = document.getElementById('res-signal');
+    signalEl.textContent = signal === 'BUY' ? '▲ BELI' : signal === 'SELL' ? '▼ JUAL' : '◆ TAHAN';
+    signalEl.className = 'signal-badge ' + signal;
+
+    document.getElementById('res-metrics').innerHTML = buildMetrics({ price, change, volume, horizon });
+    document.getElementById('conf-pct').textContent = confidence + '%';
+    setTimeout(() => {
+      document.getElementById('conf-bar').style.width = confidence + '%';
+    }, 100);
+
+    document.getElementById('res-content').innerHTML = renderMarkdown(text) + `
+      <div class="disclaimer">
+        <strong>⚠ DISCLAIMER:</strong> Analisis ini dibuat oleh AI berdasarkan data yang diinput dan pengetahuan umum. 
+        Bukan merupakan saran investasi resmi. Selalu lakukan riset mandiri (DYOR) dan konsultasikan dengan 
+        financial advisor sebelum mengambil keputusan investasi. Investasi saham mengandung risiko kehilangan modal.
+      </div>`;
+
+    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    loading.classList.remove('active');
+    result.classList.add('active');
+    document.getElementById('res-ticker').textContent = ticker + '.JK';
+    document.getElementById('res-signal').textContent = '! ERROR';
+    document.getElementById('res-signal').className = 'signal-badge SELL';
+    document.getElementById('res-metrics').innerHTML = '';
+    document.getElementById('res-content').innerHTML = `<div class="error-msg">Terjadi kesalahan: ${err.message}<br><br>Pastikan koneksi internet stabil dan coba lagi.</div>`;
+  }
+
+  btn.disabled = false;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.ctrlKey) analyze();
+});
+</script>
+</body>
+</html>
